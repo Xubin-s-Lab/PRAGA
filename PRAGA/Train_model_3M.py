@@ -12,7 +12,7 @@ from sklearn.mixture import GaussianMixture
 from sklearn.neighbors import kneighbors_graph
 from .model_3M import Encoder_overall
 from .preprocess_3M import adjacent_matrix_preprocessing
-from .optimal_clustering import R5
+from .optimal_clustering_HLN import R5 
 
 
 class Train_3M:

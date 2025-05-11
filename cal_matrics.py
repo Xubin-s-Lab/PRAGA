@@ -4,16 +4,18 @@ from sklearn.metrics import v_measure_score, homogeneity_score, completeness_sco
 from sklearn.metrics import adjusted_rand_score, fowlkes_mallows_score
 from metric import jaccard, Dice, F_measure
 from sklearn.metrics import silhouette_score
+import os
 
 
 def read_list_from_file(path):
-    list = []
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"File does not exist: {path}\nPlease confirm that the main program has successfully generated this result file.")
+    lst = []
     with open(path, 'r') as f:
         for line in f:
             num = int(line.strip())
-            list.append(num)
-
-    return list
+            lst.append(num)
+    return lst
 
 def main(arg):
     GT_list = read_list_from_file(args.GT_path)

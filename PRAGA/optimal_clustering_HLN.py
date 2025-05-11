@@ -16,7 +16,7 @@ class R5(nn.Module):
         self.N = 2
         self.begin = False
         self.datatype = data_type
-        self.device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         if self.datatype == 'SPOTS':
             self.weight = 1
             self.arg = Arg(init_K=10)
