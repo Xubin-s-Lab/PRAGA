@@ -17,35 +17,12 @@ class R5(nn.Module):
         self.begin = False
         self.datatype = data_type
         self.device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
-        if self.datatype == 'SPOTS':
-            self.weight = 1
-            self.warmup = 99
-            self.stage = 50
-            self.arg = Arg(init_K=10)
-
-        elif self.datatype == 'Stereo-CITE-seq':
-            self.weight = 1
-            self.warmup = 99
-            self.stage = 50
-            self.arg = Arg(init_K=10)
-
-        elif self.datatype == '10x':
-            self.weight = arg.cl_weight
-            self.warmup = 99
-            self.stage = 50
-            self.arg = Arg(init_K=arg.init_k)
-
-        elif self.datatype == 'Spatial-epigenome-transcriptome':
-            self.weight =2
-            self.warmup = 99
-            self.stage = 50
-            self.arg = Arg(init_K=arg.init_k)
-        else:
-            self.weight = 1
-            self.warmup = 99
-            self.stage = 100
-            self.arg = Arg(init_K=5)
-            self.arg.prior_nu = 100
+        
+        self.weight = 1
+        self.warmup = 99
+        self.stage = 100
+        self.arg = Arg(init_K=5)
+        self.arg.prior_nu = 100
 
     def forward(self, feat, epoch):
 
