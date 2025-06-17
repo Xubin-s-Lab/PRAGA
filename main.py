@@ -16,22 +16,23 @@ from PRAGA.preprocess import construct_neighbor_graph, lsi
 from PRAGA.Train_model import Train
 from PRAGA.Train_model_3M import Train_3M
 from PRAGA.utils import clustering
+from PRAGA import preprocess, preprocess_3M
 
 def main(args):
     # define device
-    device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
     # read data
     if args.data_type in ['10x', 'SPOTS', 'Stereo-CITE-seq']:
-        adata_omics1 = sc.read_h5ad(args.file_fold + 'adata_RNA.h5ad')
-        adata_omics2 = sc.read_h5ad(args.file_fold + 'adata_ADT.h5ad')
+        adata_omics1 = sc.read_h5ad(os.path.join(args.file_fold, 'adata_RNA.h5ad'))
+        adata_omics2 = sc.read_h5ad(os.path.join(args.file_fold, 'adata_ADT.h5ad'))
     elif args.data_type == 'Spatial-epigenome-transcriptome':
-        adata_omics1 = sc.read_h5ad(args.file_fold + 'adata_RNA.h5ad')
-        adata_omics2 = sc.read_h5ad(args.file_fold + 'adata_peaks_normalized.h5ad')
+        adata_omics1 = sc.read_h5ad(os.path.join(args.file_fold, 'adata_RNA.h5ad'))
+        adata_omics2 = sc.read_h5ad(os.path.join(args.file_fold, 'adata_peaks_normalized.h5ad'))
     elif args.data_type == 'Simulation':
-        adata_omics1 = sc.read_h5ad(args.file_fold + 'adata_RNA.h5ad')
-        adata_omics2 = sc.read_h5ad(args.file_fold + 'adata_ADT.h5ad')
-        adata_omics3 = sc.read_h5ad(args.file_fold + 'adata_ATAC.h5ad')
+        adata_omics1 = sc.read_h5ad(os.path.join(args.file_fold, 'adata_RNA.h5ad'))
+        adata_omics2 = sc.read_h5ad(os.path.join(args.file_fold, 'adata_ADT.h5ad'))
+        adata_omics3 = sc.read_h5ad(os.path.join(args.file_fold, 'adata_ATAC.h5ad'))
 
     adata_omics1.var_names_make_unique()
     adata_omics2.var_names_make_unique()
@@ -57,7 +58,7 @@ def main(args):
         adata_omics2 = clr_normalize_each_cell(adata_omics2)
         sc.pp.scale(adata_omics2)
         adata_omics2.obsm['feat'] = pca(adata_omics2, n_comps=adata_omics2.n_vars - 1)
-        data = construct_neighbor_graph(adata_omics1, adata_omics2, datatype=args.data_type, Arg=args)
+        data = preprocess.construct_neighbor_graph(adata_omics1, adata_omics2, datatype=args.data_type, Arg=args)
     elif args.data_type == 'Spatial-epigenome-transcriptome':
         # RNA
         sc.pp.filter_genes(adata_omics1, min_cells=10)
@@ -75,7 +76,7 @@ def main(args):
             sc.pp.highly_variable_genes(adata_omics2, flavor="seurat_v3", n_top_genes=3000)
             lsi(adata_omics2, use_highly_variable=False, n_components=51)
         adata_omics2.obsm['feat'] = adata_omics2.obsm['X_lsi'].copy()
-        data = construct_neighbor_graph(adata_omics1, adata_omics2, datatype=args.data_type, Arg=args)
+        data = preprocess.construct_neighbor_graph(adata_omics1, adata_omics2, datatype=args.data_type, Arg=args)
     elif args.data_type == 'SPOTS':
         # RNA
         sc.pp.filter_genes(adata_omics1, min_cells=10)
@@ -89,7 +90,7 @@ def main(args):
         adata_omics2 = clr_normalize_each_cell(adata_omics2)
         sc.pp.scale(adata_omics2)
         adata_omics2.obsm['feat'] = pca(adata_omics2, n_comps=adata_omics2.n_vars - 1)
-        data = construct_neighbor_graph(adata_omics1, adata_omics2, datatype=args.data_type, Arg=args)
+        data = preprocess.construct_neighbor_graph(adata_omics1, adata_omics2, datatype=args.data_type, Arg=args)
     elif args.data_type == 'Stereo-CITE-seq':
         # RNA
         sc.pp.filter_genes(adata_omics1, min_cells=10)
@@ -104,7 +105,7 @@ def main(args):
         # Protein
         adata_omics2 = clr_normalize_each_cell(adata_omics2)
         adata_omics2.obsm['feat'] = pca(adata_omics2, n_comps=adata_omics2.n_vars - 1)
-        data = construct_neighbor_graph(adata_omics1, adata_omics2, datatype=args.data_type, Arg=args)
+        data = preprocess.construct_neighbor_graph(adata_omics1, adata_omics2, datatype=args.data_type, Arg=args)
     elif args.data_type == 'Simulation':
         n_protein = adata_omics2.n_vars
         sc.pp.highly_variable_genes(adata_omics1, flavor="seurat_v3", n_top_genes=3000)
@@ -120,8 +121,7 @@ def main(args):
         lsi(adata_omics3, use_highly_variable=False, n_components=n_protein + 1)
         adata_omics3.obsm['feat'] = adata_omics3.obsm['X_lsi'].copy()
 
-        from PRAGA.preprocess_3M import construct_neighbor_graph
-        data = construct_neighbor_graph(adata_omics1, adata_omics2, adata_omics3)
+        data = preprocess_3M.construct_neighbor_graph(adata_omics1, adata_omics2, adata_omics3)
     else:
         assert 0
 
@@ -155,18 +155,19 @@ def main(args):
     if args.data_type == 'Simulation':
         ids = label.index.astype(str).str[:4]
         int_list = [int(num_str) for num_str in ids]
-        list = [-1 for i in range(len(int_list))]
+        label_list = [-1 for i in range(len(int_list))]
         for i in range(len(int_list)):
-            list[int_list[i]] = label[i]
+            label_list[int_list[i]] = label[i]
         spot_size = 60
     else:
-        list = label.tolist()
+        label_list = label.tolist()
         spot_size = 20
 
     # Save results
     output_file = args.txt_out_path
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
     with open(output_file, 'w') as f:
-        for num in list:
+        for num in label_list:
             f.write(f"{num}\n")
 
     # visualization
